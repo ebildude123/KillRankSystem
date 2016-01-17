@@ -1,6 +1,7 @@
 package com.weidizhang.killranksystem;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
@@ -58,14 +59,20 @@ public class Main extends JavaPlugin implements Listener {
 				
 				if (command.equalsIgnoreCase("give")) {
 					playerDB.addPoints(playerName, amount);
+					checkPromotionAndDemotion(playerName, playerPoints, playerPoints + amount);
+					
 					sender.sendMessage(ChatColor.GREEN + playerName + " now has " + (playerPoints + amount) + " points.");
 				}
 				else if (command.equalsIgnoreCase("take")) {
 					playerDB.removePoints(playerName, amount);
+					checkPromotionAndDemotion(playerName, playerPoints, playerPoints - amount);
+					
 					sender.sendMessage(ChatColor.GREEN + playerName + " now has " + (playerPoints - amount) + " points.");
 				}
 				else if (command.equalsIgnoreCase("set")) {
 					playerDB.setPoints(playerName, amount);
+					checkPromotionAndDemotion(playerName, playerPoints, amount);
+					
 					sender.sendMessage(ChatColor.GREEN + playerName + " now has " + amount + " points.");
 				}
 				else {
@@ -89,6 +96,44 @@ public class Main extends JavaPlugin implements Listener {
 		return false;
 	}
 	
+	public String getRankFromPoints(int points) {
+		String realRank = "";
+		Set<String> ranks = getConfig().getConfigurationSection("ranks").getKeys(false);
+		for (String rank : ranks) {
+			int ptsRequired = getConfig().getInt("ranks." + rank + ".points");
+			if (points >= ptsRequired) {
+				realRank = rank;
+			}
+		}
+		
+		return realRank;
+	}
+	
+	public void checkPromotionAndDemotion(String p, int prevPoints, int newPoints) {
+		String previousRank = getRankFromPoints(prevPoints);
+		String newRank = getRankFromPoints(newPoints);
+		
+		if (!previousRank.equals(newRank)) {
+			int ptsRequiredPrev = getConfig().getInt("ranks." + previousRank + ".points");
+			int ptsRequiredNew = getConfig().getInt("ranks." + newRank + ".points");
+			
+			List<String> commands = null;
+			if (ptsRequiredNew < ptsRequiredPrev) {
+				commands = getConfig().getStringList("ranks." + previousRank + ".onDemotionCommands");
+			}
+			else if (ptsRequiredNew > ptsRequiredPrev) {
+				commands = getConfig().getStringList("ranks." + newRank + ".onPromotionCommands");				
+			}
+			
+			if (commands != null) {
+				for (String cmd : commands) {
+					cmd = cmd.replaceAll("%player%", p);
+					getServer().dispatchCommand(getServer().getConsoleSender(), cmd);
+				}
+			}
+		}
+	}
+	
 	@EventHandler
 	public void onAsyncPlayerChat(AsyncPlayerChatEvent e) {
 		int playerPoints = playerDB.getPoints(e.getPlayer().getName());		
@@ -96,14 +141,11 @@ public class Main extends JavaPlugin implements Listener {
 		String pointsPrefix = getConfig().getString("pointsPrefix").replaceAll("%points%", playerPoints + "");
 		pointsPrefix = ChatColor.translateAlternateColorCodes('&', pointsPrefix);
 		
-		String rankPrefix = "";
+		String rank = getRankFromPoints(playerPoints);
 		
-		Set<String> ranks = getConfig().getConfigurationSection("ranks").getKeys(false);		
-		for (String rank : ranks) {
-			int ptsRequired = getConfig().getInt("ranks." + rank + ".points");
-			if (playerPoints >= ptsRequired) {
-				rankPrefix = getConfig().getString("ranks." + rank + ".prefix");
-			}
+		String rankPrefix = "";
+		if (!rank.equals("")) {
+			rankPrefix = getConfig().getString("ranks." + rank + ".prefix");
 		}
 		rankPrefix = ChatColor.translateAlternateColorCodes('&', rankPrefix);
 		
@@ -113,11 +155,14 @@ public class Main extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent e) {
 		Player died = e.getEntity();
-		Player killer = died.getKiller();		
+		Player killer = died.getKiller();
 		
 		if (killer != null) {
+			int killerPoints = playerDB.getPoints(killer.getName());
 			int pointsAdd = getConfig().getInt("pointsPerKill");
-			playerDB.addPoints(killer.getName(), pointsAdd);	
+			
+			playerDB.addPoints(killer.getName(), pointsAdd);			
+			checkPromotionAndDemotion(killer.getName(), killerPoints, killerPoints + pointsAdd);
 		}
 		
 		boolean onlyKilledDeaths = getConfig().getBoolean("onlyPlayerCausedDeaths");
@@ -131,6 +176,7 @@ public class Main extends JavaPlugin implements Listener {
 			}
 			
 			playerDB.setPoints(died.getName(), pointsToSet);
+			checkPromotionAndDemotion(died.getName(), diedPoints, pointsToSet);			
 		}
 	}
 }

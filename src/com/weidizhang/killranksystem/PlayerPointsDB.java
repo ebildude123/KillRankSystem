@@ -22,7 +22,8 @@ public class PlayerPointsDB {
 			objStream.close();
 			inStream.close();
 		}
-		catch (IOException | ClassNotFoundException e) {}
+		catch (IOException e) {}
+		catch (ClassNotFoundException e) {}
 	}
 	
 	public int getPoints(String p) {

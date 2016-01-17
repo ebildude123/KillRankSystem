@@ -1,0 +1,16 @@
+name: KillRankSystem
+main: com.weidizhang.killranksystem.Main
+version: 1.0.0
+description: Kill rank points system.
+author: Weidi Zhang
+
+commands:
+   krs:
+      description: All KillRankSystem commands.
+      permission: killranksystem.admin
+      usage: /<command>
+
+permissions:
+   killranksystem.admin:
+      description: Gives access to all KillRankSystem commands
+      default: op

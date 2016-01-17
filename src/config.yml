@@ -1,0 +1,30 @@
+# KillRankSystem by ebildude123: Configuration File
+
+# points settings
+
+pointsPerKill: 10 # points gained for each kill
+pointsLostDeath: 5 # points lost for each death
+onlyPlayerCausedDeaths: true # points lost on death only if killed by another player?
+allowNegativePoints: true # points can become negative if die too much
+
+pointsPrefix: '&7[&6%points%&7]&r' # %points% will be replaced by points
+
+# add more ranks as necessary
+# format for new ranks:
+# rankName:
+#    points: number of points needed
+#    prefix: 'prefix here'
+
+ranks:
+   Noob:
+      points: -9999
+      prefix: '&7[&fNoob&7]&r '
+   Rookie:
+      points: 0
+      prefix: '&7[&5Rookie&7]&r '
+   Advanced:
+      points: 10
+      prefix: '&7[&3Advanced&7]&r '
+   Pro:
+      points: 100
+      prefix: '&7[&4Pro&7]&r '

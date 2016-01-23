@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin implements Listener {
 	PlayerPointsDB playerDB;
+	PlayerKillsDB killsDB;
 	
 	@Override
 	public void onEnable() {
@@ -27,6 +28,7 @@ public class Main extends JavaPlugin implements Listener {
 			dataFolder.mkdirs();
 		}
 		playerDB = new PlayerPointsDB(getDataFolder().getAbsolutePath() + File.separator + "points.db");
+		killsDB = new PlayerKillsDB(getDataFolder().getAbsolutePath() + File.separator + "kills.db");
 		
 		getLogger().info("KillRankSystem by ebildude123 (Weidi Zhang) is now fully initialized");
 	}
@@ -145,7 +147,7 @@ public class Main extends JavaPlugin implements Listener {
 		
 		String rankPrefix = "";
 		if (!rank.equals("")) {
-			rankPrefix = getConfig().getString("ranks." + rank + ".prefix");
+			rankPrefix = getConfig().getString("ranks." + rank + ".prefix").replaceAll("%points%", playerPoints + "");
 		}
 		rankPrefix = ChatColor.translateAlternateColorCodes('&', rankPrefix);
 		
@@ -158,11 +160,34 @@ public class Main extends JavaPlugin implements Listener {
 		Player killer = died.getKiller();
 		
 		if (killer != null) {
-			int killerPoints = playerDB.getPoints(killer.getName());
-			int pointsAdd = getConfig().getInt("pointsPerKill");
+			boolean addPoints = true;
 			
-			playerDB.addPoints(killer.getName(), pointsAdd);			
-			checkPromotionAndDemotion(killer.getName(), killerPoints, killerPoints + pointsAdd);
+			if (getConfig().getBoolean("enableKillCooldown")) {
+				long timestamp = System.currentTimeMillis() / 1000L;
+				long killTime = killsDB.getKillTime(killer.getName(), died.getName());
+				int cooldown = getConfig().getInt("cooldownTime");
+				
+				if ((killTime + cooldown) > timestamp) {
+					addPoints = false;
+					
+					String cdMessage = getConfig().getString("cooldownMessage");
+					if (!cdMessage.equals("")) {
+						cdMessage = ChatColor.translateAlternateColorCodes('&', cdMessage.replaceAll("%player%", died.getName()));						
+						killer.sendMessage(cdMessage);
+					}
+				}
+				else {
+					killsDB.setKillTime(killer.getName(), died.getName(), timestamp);
+				}
+			}
+			
+			if (addPoints) {
+				int killerPoints = playerDB.getPoints(killer.getName());
+				int pointsAdd = getConfig().getInt("pointsPerKill");
+				
+				playerDB.addPoints(killer.getName(), pointsAdd);			
+				checkPromotionAndDemotion(killer.getName(), killerPoints, killerPoints + pointsAdd);
+			}
 		}
 		
 		boolean onlyKilledDeaths = getConfig().getBoolean("onlyPlayerCausedDeaths");

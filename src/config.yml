@@ -9,6 +9,13 @@ allowNegativePoints: true # points can become negative if die too much
 
 pointsPrefix: '&7[&6%points%&7]&r' # %points% will be replaced by points
 
+# cooldown settings
+# cooldown is not awarding points for killing the same player for X amount of time
+
+enableKillCooldown: true
+cooldownTime: 7200 # time is in seconds
+cooldownMessage: '&cYou killed %player% for points recently, so you did not gain any points this time.' # leave blank for no message. Use %player% for name of player that died/was killed.
+
 # add more ranks as necessary
 # format for new ranks:
 # rankName:
@@ -23,7 +30,7 @@ pointsPrefix: '&7[&6%points%&7]&r' # %points% will be replaced by points
 ranks:
    Noob:
       points: -9999
-      prefix: '&7[&fNoob&7]&r '
+      prefix: '&7[&fNoob&7]&r ' # You can use %points% here in group prefixes as well in case you want to use it
       onPromotionCommands:
       onDemotionCommands:
    Rookie:

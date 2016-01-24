@@ -196,7 +196,7 @@ public class Main extends JavaPlugin implements Listener {
 			int diedPoints = playerDB.getPoints(died.getName());
 			int pointsToSet = diedPoints - pointsRemove;
 			
-			if (!getConfig().getBoolean("allowNegativePoints")) {
+			if (!getConfig().getBoolean("allowNegativePoints") && pointsToSet < 0) {
 				pointsToSet = 0;
 			}
 			
